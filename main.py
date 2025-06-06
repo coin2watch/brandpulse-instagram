@@ -5,7 +5,7 @@ from datetime import datetime
 import os
 import json
 
-# 📌 환경 변수로부터 API Key 및 서비스 계정 인증서 가져오기
+# 📌 환경 변수에서 API Key 및 서비스 계정 JSON 불러오기
 serp_api_key = os.environ['SERPAPI_KEY']
 google_json_raw = os.environ['GOOGLE_SERVICE_ACCOUNT_JSON']
 
@@ -24,11 +24,12 @@ gc = gspread.authorize(credentials)
 # 📄 시트 열기
 spreadsheet = gc.open("BrandPulse_Lotte_Hotel")
 worksheet = spreadsheet.worksheet("InstagramData")
+insight_sheet = spreadsheet.worksheet("InstagramInsights")
 
 # 📋 브랜드 목록
 brands = ["롯데호텔", "신라호텔", "조선호텔", "베스트웨스턴"]
 
-# 📈 SerpApi에서 인스타그램 관련 데이터 수집 함수
+# 📈 인스타그램 데이터 수집
 def fetch_instagram_data(brand):
     query = f"site:instagram.com {brand}"
     url = f"https://serpapi.com/search.json?engine=google&q={query}&api_key={serp_api_key}"
@@ -36,32 +37,48 @@ def fetch_instagram_data(brand):
     response = requests.get(url)
     data = response.json()
 
-    posts = data.get("organic_results", [])[:10]  # 최대 10개 포스트 기준
+    posts = data.get("organic_results", [])[:10]
     post_count = len(posts)
 
-    # 예시 기반 생성 (정확한 수치는 SerpApi로는 제한적이므로 샘플 생성)
     avg_likes = 1000 + hash(brand) % 1000
     avg_comments = 50 + hash(brand[::-1]) % 100
     hashtags = 1000 + hash(brand + "tags") % 3000
-
-    # 감정 분석은 간단한 룰 기반
     sentiment = "긍정" if brand in ["롯데호텔", "신라호텔", "베스트웨스턴"] else "중립"
 
-    return [today, brand, post_count, avg_likes, avg_comments, hashtags, sentiment]
+    return posts, [today, brand, post_count, avg_likes, avg_comments, hashtags, sentiment]
 
-# ✅ 오늘 날짜에 해당 브랜드 데이터가 이미 있으면 건너뜀
+# 🧠 키워드 및 요약 추출 함수 (임시 룰 기반, GPT 적용 예정)
+def extract_keywords_and_summary(posts, brand):
+    all_titles = " ".join([p.get("title", "") for p in posts])
+    words = [word.strip("#., ") for word in all_titles.split()]
+    keywords = list(set([w for w in words if len(w) > 4 and brand not in w and "instagram" not in w.lower()]))
+    summary = all_titles[:80] + "..." if all_titles else "요약 없음"
+    return ", ".join(keywords[:5]), summary
+
+# ✅ 기존 InstagramData 시트 확인 (중복 방지)
 existing_dates = worksheet.col_values(1)
 existing_brands = worksheet.col_values(2)
-existing_today_rows = [
-    (d, b) for d, b in zip(existing_dates, existing_brands) if d == today
-]
+existing_today_rows = set((d, b) for d, b in zip(existing_dates, existing_brands) if d == today)
 
-# 📤 시트에 데이터 추가
+# ✅ 기존 InstagramInsights 시트 확인
+insight_rows = insight_sheet.get_all_values()
+insight_existing = set((row[0], row[1]) for row in insight_rows[1:])  # 헤더 제외
+
+# 📤 두 시트 모두 업데이트
 for brand in brands:
-    if (today, brand) in existing_today_rows:
-        print(f"{brand} 데이터 이미 존재 - 스킵")
-        continue
+    # InstagramData
+    if (today, brand) not in existing_today_rows:
+        posts, row = fetch_instagram_data(brand)
+        worksheet.append_row(row)
+        print(f"[InstagramData] {brand} 데이터 추가 완료")
+    else:
+        print(f"[InstagramData] {brand} 이미 존재 - 스킵")
 
-    row = fetch_instagram_data(brand)
-    worksheet.append_row(row)
-    print(f"{brand} 데이터 수집 완료")
+    # InstagramInsights
+    if (today, brand) not in insight_existing:
+        posts, _ = fetch_instagram_data(brand)
+        keywords, summary = extract_keywords_and_summary(posts, brand)
+        insight_sheet.append_row([today, brand, keywords, summary])
+        print(f"[InstagramInsights] {brand} 인사이트 추가 완료")
+    else:
+        print(f"[InstagramInsights] {brand} 인사이트 이미 존재 - 스킵")
