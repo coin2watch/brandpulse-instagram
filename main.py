@@ -97,3 +97,23 @@ for brand in brands:
     keywords, summary = extract_keywords_and_summary(brand, posts)
     worksheet_insights.append_row([today, brand, keywords, summary])
     print(f"{brand} InstagramInsights 저장 완료")
+
+# ChatGPT를 이용한 요약
+try:
+    completion = openai.ChatCompletion.create(
+        model="gpt-3.5-turbo",
+        messages=[
+            {"role": "system", "content": "Extract key keywords and give a short summary of these Instagram post titles."},
+            {"role": "user", "content": "\n".join(titles)}
+        ],
+        max_tokens=300
+    )
+    summary_text = completion.choices[0].message.content.strip()
+
+    keywords = summary_text.split("\n")[0]
+    summary = "\n".join(summary_text.split("\n")[1:])
+
+    insights_ws.append_row([today, brand, keywords, summary])
+    print(f"[✓] {brand} 인사이트 저장 완료")
+except Exception as e:
+    print(f"[X] {brand} 요약 실패: {e}")
