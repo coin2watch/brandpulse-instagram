@@ -81,7 +81,7 @@ def fetch_instagram_data(brand):
         completion = client.chat.completions.create(
             model="gpt-3.5-turbo",
             messages=[
-                {"role": "system", "content": "Extract insights from Instagram post titles in Korean."},
+                {"role": "system", "content": "다음 인스타그램 게시물 제목들을 바탕으로, 브랜드의 마케팅 인사이트를 한국어로 요약해 주세요."},
                 {"role": "user", "content": "\n".join(titles)}
             ],
             max_tokens=300
