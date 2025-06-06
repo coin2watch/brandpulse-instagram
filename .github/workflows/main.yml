@@ -1,0 +1,30 @@
+name: Daily Instagram Data Update
+
+on:
+  schedule:
+    - cron: '0 0 * * *'  # 매일 00:00 UTC (한국 시간 9:00 오전)
+  workflow_dispatch:      # 수동 실행도 가능하게
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+
+    - name: Install Dependencies
+      run: |
+        pip install -r requirements.txt
+        pip install gspread oauth2client
+
+    - name: Run Script
+      env:
+        GOOGLE_SHEET_KEY: ${{ secrets.1j9K91M2TjxYtlt4senMTRANo9rMzpK7lvewmhJ__zNQ }}
+        GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
+      run: python main.py
