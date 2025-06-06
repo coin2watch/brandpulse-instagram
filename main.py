@@ -2,6 +2,8 @@ import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 import requests
 from datetime import datetime
+import os
+import json
 
 # 구글 시트 인증
 scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
@@ -16,8 +18,12 @@ worksheet = spreadsheet.worksheet("InstagramData")
 brands = ["롯데호텔", "신라호텔", "조선호텔", "베스트웨스턴"]
 today = datetime.today().strftime("%Y-%m-%d")
 
+# SerpApi Key는 환경변수 또는 secrets에서 불러오기 (예: GitHub Actions 사용 시)
+SERP_API_KEY = os.getenv("SERP_API_KEY") or "YOUR_SERPAPI_KEY"
+
+
 def fetch_instagram_data(brand):
-    url = f"https://serpapi.com/search.json?engine=google&q=site:instagram.com {brand}&api_key=YOUR_SERPAPI_KEY"
+    url = f"https://serpapi.com/search.json?engine=google&q=site:instagram.com {brand}&api_key={SERP_API_KEY}"
     response = requests.get(url)
     data = response.json()
 
@@ -30,6 +36,8 @@ def fetch_instagram_data(brand):
 
     return [today, brand, post_count, avg_likes, avg_comments, hashtags, sentiment]
 
+
 for brand in brands:
     row = fetch_instagram_data(brand)
     worksheet.append_row(row)
+    print(f"{brand} 데이터 추가 완료: {row}")
