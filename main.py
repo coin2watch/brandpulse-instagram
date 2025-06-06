@@ -40,7 +40,7 @@ def fetch_instagram_insights(brand):
 # 키워드 추출 함수 (단순 빈도 기반)
 def extract_keywords(text):
     words = re.findall(r"\b[\w가-힣]{2,}\b", text.lower())
-    stopwords = ["instagram", "com", brand.lower() for brand in brands]
+    stopwords = ["instagram", "com"] + [brand.lower() for brand in brands]
     filtered = [w for w in words if w not in stopwords]
     freq = {}
     for w in filtered:
