@@ -2,7 +2,7 @@ name: Instagram Data Collector
 
 on:
   schedule:
-    - cron: '0 22 * * *'  # 매일 오전 7시 KST 실행 (22시 UTC)
+    - cron: '0 22 * * *'  # 매일 오전 7시 KST
   workflow_dispatch:
 
 jobs:
@@ -20,14 +20,11 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install gspread oauth2client requests
-
-      - name: Set up credentials file
-        run: echo "${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}" > credentials.json
+          pip install gspread oauth2client requests openai
 
       - name: Run script
         env:
-          GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
           SERPAPI_KEY: ${{ secrets.SERPAPI_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
         run: python main.py
-
