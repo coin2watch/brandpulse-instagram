@@ -3,9 +3,15 @@ from oauth2client.service_account import ServiceAccountCredentials
 import requests
 from datetime import datetime
 import os
+import json
 
-# 🔐 환경 변수에서 SerpApi Key 불러오기
+# 🔐 환경 변수에서 SerpApi Key 및 Google JSON 불러오기
 serp_api_key = os.environ['SERPAPI_KEY']
+google_json_raw = os.environ['GOOGLE_SERVICE_ACCOUNT_JSON']
+
+# 📄 credentials.json 임시 생성
+with open("credentials.json", "w") as f:
+    json.dump(json.loads(google_json_raw), f)
 
 # 📅 날짜
 today = datetime.today().strftime("%Y-%m-%d")
@@ -30,15 +36,12 @@ def fetch_instagram_data(brand):
     response = requests.get(url)
     data = response.json()
 
-    posts = data.get("organic_results", [])[:10]  # 최대 10개 포스트 기준
+    posts = data.get("organic_results", [])[:10]
     post_count = len(posts)
 
-    # 샘플로 무작위 생성 (API에 직접 좋아요 수, 댓글 수, 해시태그 수는 없음)
     avg_likes = 1000 + hash(brand) % 1000
     avg_comments = 50 + hash(brand[::-1]) % 100
     hashtags = 1000 + hash(brand + "tags") % 3000
-
-    # 감정 분석은 단순 룰 기반
     sentiment = "긍정" if brand in ["롯데호텔", "신라호텔", "베스트웨스턴"] else "중립"
 
     return [today, brand, post_count, avg_likes, avg_comments, hashtags, sentiment]
