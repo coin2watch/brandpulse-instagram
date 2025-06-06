@@ -9,7 +9,7 @@ credentials = ServiceAccountCredentials.from_json_keyfile_name("credentials.json
 gc = gspread.authorize(credentials)
 
 # 시트 열기
-spreadsheet = gc.open("BrandPulse")
+spreadsheet = gc.open("BrandPulse_Lotte_Hotel")
 worksheet = spreadsheet.worksheet("InstagramData")
 
 # 브랜드 리스트
